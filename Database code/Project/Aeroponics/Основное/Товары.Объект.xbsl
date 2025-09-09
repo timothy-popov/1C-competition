@@ -1,0 +1,40 @@
+конст ТОКЕН_ПОДКЛЮЧЕНИЯ = "eyJhbGciOiJSUzUxMiJ9.eyJpc3MiOiJkZ1gtOVJkdjJ5LUhId25mRHhCU0tLUi15VUpXNjNmTi0yNFUteVVTSGJFPSIsInN1YiI6IntcbiAgXCJ1c2VyLWlkXCIgOiBcIjAxOTc5ODE3LTc0NGMtN2M4Yi1iZWFmLTBhNDA0ZDczNzFjZVwiLFxuICBcInVzZXItbGlzdC1pZFwiIDogXCJlZDFmZjVhMS1lYzhlLTRjZmUtOTU5OC0zZTY0OGQ0NTNhOTBcIixcbiAgXCJ1c2VyLXByZXNlbnRhdGlvblwiIDogXCJBUElcIixcbiAgXCJhdXRoLWlkZW50aXR5XCIgOiB7XG4gICAgXCJuYW1lXCIgOiBcImFCbkszakt6RVN6dEJJZkRiVFdQeHB6UHhXaDM3VEZ5ODV5TnlQbkFYVGM9XCIsXG4gICAgXCJkb21haW5cIiA6IFwidXNlcl90b2tlbnNcIlxuICB9XG59IiwiYXVkIjoiYUJuSzNqS3pFU3p0QklmRGJUV1B4cHpQeFdoMzdURnk4NXlOeVBuQVhUYz0iLCJpYXQiOjE3NTA3ODk5MjQsImV4cCI6MTc1MDc5MzUyNCwiYXRfaGFzaCI6IkFjY2Vzc1Rva2VuIGhhc2ggKG5vdCBpbXBsZW1lbnRlZCkifQ.O_ULUJ4-ESWLZ_5sIrp7m1RHl3Xu1vUN7Qjz6eNjh-AldE0HSaYHnvyY6ZTSCUn_zeG0FDoNcRP7aHA8_DBXfpihk3FfOUO-MH2O4e5lMHJeyVTpZ96xoXHFnjAjR7Vfn1HO0_SvxlcNGZYO9Ae9Jzk3B37dQfQIuBRIID5DRJ4"
+конст URL = "https://aerofarm.1cmycloud.com/applications/farm/api/v1/goods"
+
+@Локально
+структура Товар
+    знч Наименование: Строка
+    знч Цена: Число
+    знч КодСинхронизации: Строка
+;
+
+@Обработчик
+метод ПослеЗаписи(До: Товары.Данные, ПараметрыЗаписи: Товары.ПараметрыЗаписи)
+    знч ДанныеКОтправке = ПолучитьДанные(Ссылка)
+    знч JSONКОтправке = СериализацияJson.ЗаписатьОбъект(ДанныеКОтправке)
+    ОтправитьДанные(JSONКОтправке)
+;
+
+@ВПроекте
+метод ПолучитьДанные(Товар: Товары.Ссылка): Массив<Товар>
+    возврат Запрос{
+        ВЫБРАТЬ
+            Цены.Товар.Наименование.ЗаменитьNull("") КАК Наименование,
+            Цены.Товар.Код.ЗаменитьNull("") КАК КодСинхронизации,
+            Цены.Цена КАК Цена
+        ЗАПОЛНИТЬ
+            Товар
+        ИЗ
+            ЦеныТоваров.СрезПоследних() КАК Цены
+        ГДЕ
+            Цены.Товар == %Товар
+    }.Выполнить().ВМассив()
+;
+
+метод ОтправитьДанные(ТелоЗапроса: Строка)
+    исп Ответ = КлиентHttp.ЗапросPost(URL)
+        .ДобавитьЗаголовок("Content-Type", "application/json")
+        .ДобавитьЗаголовок("Authorization", "Bearer " + ТОКЕН_ПОДКЛЮЧЕНИЯ)
+        .УстановитьТело(ТелоЗапроса)
+        .Выполнить()
+;
